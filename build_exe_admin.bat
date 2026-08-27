@@ -28,7 +28,7 @@ pyinstaller --noconfirm --onefile --windowed --uac-admin ^
 echo.
 echo ============================================================
 echo Build complete: dist\VBL-Macro.exe
- echo This build requests administrator rights on launch.
+echo This build requests administrator rights on launch.
 echo ============================================================
 echo.
 pause
