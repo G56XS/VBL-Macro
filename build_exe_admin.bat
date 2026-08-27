@@ -1,8 +1,9 @@
 @echo off
-REM Same as build_exe.bat, but the resulting exe will show a UAC prompt
-REM and auto-run elevated every time it's launched. Use this variant if
-REM your hotkeys don't register while playing (some games run elevated
-REM and ignore input from non-elevated processes).
+REM ============================================================
+REM  VBL Macro — administrator Windows build script
+REM  Output exe: dist\VBL-Macro.exe
+REM  The executable requests admin rights on launch.
+REM ============================================================
 
 setlocal
 
@@ -16,7 +17,7 @@ if not exist "app_icon.ico" (
 )
 
 pyinstaller --noconfirm --onefile --windowed --uac-admin ^
-    --name "ClickMacro" ^
+    --name "VBL-Macro" ^
     --icon "app_icon.ico" ^
     --add-data "app_icon.ico;." ^
     --add-data "icon_512.png;." ^
@@ -25,5 +26,9 @@ pyinstaller --noconfirm --onefile --windowed --uac-admin ^
     key_macro_gui.py
 
 echo.
-echo Done. dist\ClickMacro.exe will prompt for admin rights on launch.
+echo ============================================================
+echo Build complete: dist\VBL-Macro.exe
+ echo This build requests administrator rights on launch.
+echo ============================================================
+echo.
 pause
