@@ -4,7 +4,6 @@ Item {
     id: glass
 
     property var sourceTexture
-    property Item coordinateRoot
     property real rootWidth: 1
     property real rootHeight: 1
     property real time: 0
@@ -15,14 +14,8 @@ Item {
     property color tintColor: "#ffffff"
     property bool enabled: true
 
-    function mappedX() {
-        if (!coordinateRoot) return x
-        return mapToItem(coordinateRoot, 0, 0).x
-    }
-
-    function mappedY() {
-        if (!coordinateRoot) return y
-        return mapToItem(coordinateRoot, 0, 0).y
+    function mappedPosition() {
+        return mapToItem(null, 0, 0)
     }
 
     ShaderEffect {
@@ -31,8 +24,8 @@ Item {
         blending: true
         property var source: glass.sourceTexture
         property vector4d sourceRect: Qt.vector4d(
-            glass.mappedX() / glass.rootWidth,
-            glass.mappedY() / glass.rootHeight,
+            glass.mappedPosition().x / glass.rootWidth,
+            glass.mappedPosition().y / glass.rootHeight,
             glass.width / glass.rootWidth,
             glass.height / glass.rootHeight
         )
