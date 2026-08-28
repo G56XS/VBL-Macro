@@ -14,20 +14,35 @@ if not exist "shaders\liquid_glass.frag" (
     exit /b 1
 )
 
-for /f "delims=" %%Q in ('python -c "from PySide6.QtCore import QLibraryInfo; print(QLibraryInfo.path(QLibraryInfo.BinariesPath))"') do set "QT_BIN=%%Q"
+REM PySide6 installs the shader baker as pyside6-qsb.exe.
+REM Prefer PATH, then Python's Scripts directory.
+set "QSB="
+for /f "delims=" %%Q in ('where pyside6-qsb 2^>nul') do if not defined QSB set "QSB=%%Q"
 
-if not exist "%QT_BIN%\qsb.exe" (
-    echo [!] qsb.exe was not found in:
-    echo     %QT_BIN%
+if not defined QSB (
+    for /f "delims=" %%Q in ('python -c "import os,sys; print(os.path.join(os.path.dirname(sys.executable), 'Scripts', 'pyside6-qsb.exe'))"') do if exist "%%Q" set "QSB=%%Q"
+)
+
+if not defined QSB (
+    echo [!] pyside6-qsb.exe was not found.
     echo.
-    echo Reinstall PySide6 or use the Qt Shader Tools package.
+    echo PySide6 is installed, but its Qt Shader Tools command was not found.
+    echo Try this in Command Prompt:
+    echo     where pyside6-qsb
+    echo.
+    echo Qt documents pyside6-qsb as the PySide6 shader compiler.
     pause
     exit /b 1
 )
 
+echo Using shader compiler:
+echo   %QSB%
+
+echo.
+
 if not exist "shaders" mkdir shaders
 
-"%QT_BIN%\qsb.exe" --qt6 -o "shaders\liquid_glass.frag.qsb" "shaders\liquid_glass.frag"
+"%QSB%" --qt6 -o "shaders\liquid_glass.frag.qsb" "shaders\liquid_glass.frag"
 if errorlevel 1 (
     echo.
     echo [!] Shader compilation failed.
