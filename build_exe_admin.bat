@@ -40,20 +40,28 @@ if not exist "shaders\liquid_glass.frag" (
     exit /b 1
 )
 
-for /f "delims=" %%Q in ('python -c "from PySide6.QtCore import QLibraryInfo; print(QLibraryInfo.path(QLibraryInfo.BinariesPath))"') do set "QT_BIN=%%Q"
+REM PySide6 exposes the Qt Shader Baker as pyside6-qsb.exe.
+REM Find it from PATH first, then Python's Scripts directory.
+set "QSB="
+for /f "delims=" %%Q in ('where pyside6-qsb 2^>nul') do if not defined QSB set "QSB=%%Q"
+if not defined QSB (
+    for /f "delims=" %%Q in ('python -c "import os,sys; print(os.path.join(os.path.dirname(sys.executable), 'Scripts', 'pyside6-qsb.exe'))"') do if exist "%%Q" set "QSB=%%Q"
+)
 
-if not exist "%QT_BIN%\qsb.exe" (
-    echo [!] qsb.exe was not found in:
-    echo     %QT_BIN%
-    echo.
-    echo Run build_shaders.bat first or reinstall PySide6.
+if not defined QSB (
+    echo [!] pyside6-qsb.exe was not found.
+    echo PySide6 is installed, but the shader compiler could not be located.
+    echo Try: where pyside6-qsb
     pause
     exit /b 1
 )
 
-if not exist "shaders" mkdir shaders
+echo Using shader compiler:
+echo   %QSB%
+echo.
 
-"%QT_BIN%\qsb.exe" --qt6 -o "shaders\liquid_glass.frag.qsb" "shaders\liquid_glass.frag"
+if not exist "shaders" mkdir shaders
+"%QSB%" --qt6 -o "shaders\liquid_glass.frag.qsb" "shaders\liquid_glass.frag"
 if errorlevel 1 (
     echo [!] Liquid glass shader compilation failed.
     pause
@@ -83,6 +91,7 @@ echo.
 echo ============================================================
 echo VBL Macro administrator build complete:
 echo   dist\VBL-Macro.exe
+echo This build requests administrator rights on launch.
 echo ============================================================
 echo.
 pause
