@@ -1,6 +1,6 @@
 @echo off
 REM ============================================================
-REM  VBL Macro — administrator Windows build script
+REM  VBL Macro — premium Qt/QML administrator build
 REM  Output exe: dist\VBL-Macro.exe
 REM  The executable requests admin rights on launch.
 REM ============================================================
@@ -8,19 +8,26 @@ REM ============================================================
 setlocal
 
 python -m pip install --upgrade pip
-python -m pip install --upgrade pyinstaller keyboard pydirectinput pillow
+python -m pip install --upgrade pyinstaller keyboard pydirectinput pillow PySide6
 
 if not exist "app_icon.ico" (
-    echo [!] app_icon.ico not found in this folder. Add it first.
+    echo [!] app_icon.ico not found in this folder.
     pause
     exit /b 1
 )
 
-pyinstaller --noconfirm --onefile --windowed --uac-admin ^
+if not exist "Glass.qml" (
+    echo [!] Glass.qml not found. The premium UI cannot be packaged.
+    pause
+    exit /b 1
+)
+
+pyinstaller --noconfirm --clean --onefile --windowed --uac-admin ^
     --name "VBL-Macro" ^
     --icon "app_icon.ico" ^
     --add-data "app_icon.ico;." ^
     --add-data "icon_512.png;." ^
+    --add-data "Glass.qml;." ^
     --hidden-import "keyboard._winkeyboard" ^
     --hidden-import "keyboard._winmouse" ^
     key_macro_gui.py
