@@ -1,6 +1,8 @@
 """VBL Macro premium desktop application.
 
 Python owns the input engine; Qt Quick/QML owns the visual layer.
+The UI uses a precompiled Qt Shader Tools liquid-glass effect for actual
+background sampling, edge refraction, blur, and chromatic separation.
 """
 
 import ctypes
@@ -62,13 +64,11 @@ class Bridge(QObject):
 
     def __init__(self):
         super().__init__()
-        self.started_at = None
 
     @Slot()
     def toggle(self):
         global running
         running = not running
-        self.started_at = time.monotonic() if running else None
         self.stateChanged.emit(running, roblox_focused)
         self.logLine.emit(f"{time.strftime('%H:%M:%S')}   ENGINE {'ARMED' if running else 'DISARMED'}")
 
@@ -82,12 +82,8 @@ class Bridge(QObject):
         event_count = 0
         last_key = "—"
         last_time = "—"
-        self.telemetry.emit(event_count, last_key, last_time)
+        self.telemetry.emit(0, last_key, last_time)
         self.logLine.emit(f"{time.strftime('%H:%M:%S')}   SESSION RESET")
-
-    @Slot()
-    def signalRoblox(self):
-        self.stateChanged.emit(running, roblox_focused)
 
     def push_telemetry(self):
         self.telemetry.emit(event_count, last_key, last_time)
@@ -133,7 +129,7 @@ def main():
     bridge = Bridge()
     engine = QQmlApplicationEngine()
     engine.rootContext().setContextProperty("bridge", bridge)
-    qml_path = os.path.join(BASE_DIR, "Glass.qml")
+    qml_path = os.path.join(BASE_DIR, "MainRefraction.qml")
     engine.load(QUrl.fromLocalFile(qml_path))
     if not engine.rootObjects():
         raise RuntimeError(f"Could not load QML interface: {qml_path}")
