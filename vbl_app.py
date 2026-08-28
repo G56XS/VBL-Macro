@@ -1,8 +1,6 @@
 """VBL Macro premium desktop application.
 
-Python owns the input engine; Qt Quick/QML owns the visual layer.  Keeping
-these responsibilities separate makes it easy to iterate on the UI without
-changing the established macro behavior.
+Python owns the input engine; Qt Quick/QML owns the visual layer.
 """
 
 import ctypes
@@ -18,7 +16,6 @@ from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtWidgets import QApplication
 
 pydirectinput.PAUSE = 0
-
 IS_WINDOWS = sys.platform.startswith("win")
 ROBLOX_TITLE_MATCH = "roblox"
 BASE_DIR = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
@@ -60,12 +57,12 @@ def combo_r():
 class Bridge(QObject):
     stateChanged = Signal(bool, bool)
     fired = Signal(str, int)
+    telemetry = Signal(int, str, str)
     logLine = Signal(str)
 
     def __init__(self):
         super().__init__()
         self.started_at = None
-        self.last_log = ""
 
     @Slot()
     def toggle(self):
@@ -73,8 +70,7 @@ class Bridge(QObject):
         running = not running
         self.started_at = time.monotonic() if running else None
         self.stateChanged.emit(running, roblox_focused)
-        msg = f"{time.strftime('%H:%M:%S')}   ENGINE {'ARMED' if running else 'DISARMED'}"
-        self.logLine.emit(msg)
+        self.logLine.emit(f"{time.strftime('%H:%M:%S')}   ENGINE {'ARMED' if running else 'DISARMED'}")
 
     @Slot()
     def quitApp(self):
@@ -86,19 +82,21 @@ class Bridge(QObject):
         event_count = 0
         last_key = "—"
         last_time = "—"
+        self.telemetry.emit(event_count, last_key, last_time)
         self.logLine.emit(f"{time.strftime('%H:%M:%S')}   SESSION RESET")
 
     @Slot()
     def signalRoblox(self):
         self.stateChanged.emit(running, roblox_focused)
 
+    def push_telemetry(self):
+        self.telemetry.emit(event_count, last_key, last_time)
+
 
 def keyboard_handler(key, action, bridge):
     def on_event(event):
         global event_count, last_key, last_time
-        if not running:
-            return
-        if IS_WINDOWS and not roblox_focused:
+        if not running or (IS_WINDOWS and not roblox_focused):
             return
         if event.event_type == "down":
             if key in held:
@@ -109,6 +107,7 @@ def keyboard_handler(key, action, bridge):
             last_key = key.upper()
             last_time = time.strftime("%H:%M:%S")
             bridge.fired.emit(last_key, 3 if key == "`" else 2)
+            bridge.telemetry.emit(event_count, last_key, last_time)
             bridge.logLine.emit(f"{last_time}   {last_key}   COMBO EXECUTED   #{event_count}")
         elif event.event_type == "up":
             held.discard(key)
@@ -125,12 +124,6 @@ def roblox_poll(bridge):
         time.sleep(0.15)
 
 
-def uptime_tick(bridge):
-    # Emit a harmless state packet so QML can refresh its clock without
-    # needing Python timers crossing thread boundaries.
-    bridge.stateChanged.emit(running, roblox_focused)
-
-
 def main():
     app = QApplication(sys.argv)
     app.setApplicationName("VBL Macro")
@@ -140,7 +133,6 @@ def main():
     bridge = Bridge()
     engine = QQmlApplicationEngine()
     engine.rootContext().setContextProperty("bridge", bridge)
-
     qml_path = os.path.join(BASE_DIR, "Main.qml")
     engine.load(QUrl.fromLocalFile(qml_path))
     if not engine.rootObjects():
@@ -154,9 +146,8 @@ def main():
         threading.Thread(target=roblox_poll, args=(bridge,), daemon=True).start()
 
     timer = QTimer()
-    timer.timeout.connect(lambda: uptime_tick(bridge))
+    timer.timeout.connect(bridge.push_telemetry)
     timer.start(500)
-
     return app.exec()
 
 
