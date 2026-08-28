@@ -1,6 +1,6 @@
 @echo off
 REM ============================================================
-REM  VBL Macro — premium Qt/QML Windows build
+REM  VBL Macro — Liquid Glass Windows build
 REM  Output exe: dist\VBL-Macro.exe
 REM ============================================================
 
@@ -15,8 +15,47 @@ if not exist "app_icon.ico" (
     exit /b 1
 )
 
-if not exist "Glass.qml" (
-    echo [!] Glass.qml not found. The premium UI cannot be packaged.
+if not exist "MainRefraction.qml" (
+    echo [!] MainRefraction.qml not found.
+    pause
+    exit /b 1
+)
+
+if not exist "LiquidGlass.qml" (
+    echo [!] LiquidGlass.qml not found.
+    pause
+    exit /b 1
+)
+
+if not exist "Metric.qml" (
+    echo [!] Metric.qml not found.
+    pause
+    exit /b 1
+)
+
+if not exist "shaders\liquid_glass.frag" (
+    echo [!] shaders\liquid_glass.frag not found.
+    pause
+    exit /b 1
+)
+
+REM Locate qsb from the installed PySide6 Qt toolchain.
+for /f "delims=" %%Q in ('python -c "from PySide6.QtCore import QLibraryInfo; print(QLibraryInfo.path(QLibraryInfo.BinariesPath))"') do set "QT_BIN=%%Q"
+
+if not exist "%QT_BIN%\qsb.exe" (
+    echo [!] qsb.exe was not found in:
+    echo     %QT_BIN%
+    echo.
+    echo Run build_shaders.bat first or reinstall PySide6.
+    pause
+    exit /b 1
+)
+
+if not exist "shaders" mkdir shaders
+
+"%QT_BIN%\qsb.exe" --qt6 -o "shaders\liquid_glass.frag.qsb" "shaders\liquid_glass.frag"
+if errorlevel 1 (
+    echo [!] Liquid glass shader compilation failed.
     pause
     exit /b 1
 )
@@ -26,14 +65,24 @@ pyinstaller --noconfirm --clean --onefile --windowed ^
     --icon "app_icon.ico" ^
     --add-data "app_icon.ico;." ^
     --add-data "icon_512.png;." ^
-    --add-data "Glass.qml;." ^
+    --add-data "MainRefraction.qml;." ^
+    --add-data "LiquidGlass.qml;." ^
+    --add-data "Metric.qml;." ^
+    --add-data "shaders;shaders" ^
     --hidden-import "keyboard._winkeyboard" ^
     --hidden-import "keyboard._winmouse" ^
     key_macro_gui.py
 
+if errorlevel 1 (
+    echo [!] PyInstaller build failed.
+    pause
+    exit /b 1
+)
+
 echo.
 echo ============================================================
-echo Build complete: dist\VBL-Macro.exe
+echo VBL Macro build complete:
+echo   dist\VBL-Macro.exe
 echo ============================================================
 echo.
 pause
