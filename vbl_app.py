@@ -133,7 +133,7 @@ def main():
     bridge = Bridge()
     engine = QQmlApplicationEngine()
     engine.rootContext().setContextProperty("bridge", bridge)
-    qml_path = os.path.join(BASE_DIR, "Main.qml")
+    qml_path = os.path.join(BASE_DIR, "Glass.qml")
     engine.load(QUrl.fromLocalFile(qml_path))
     if not engine.rootObjects():
         raise RuntimeError(f"Could not load QML interface: {qml_path}")
