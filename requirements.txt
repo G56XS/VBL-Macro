@@ -1,4 +1,5 @@
 keyboard
 pydirectinput
 pillow
+PySide6>=6.10,<7
 pyinstaller
